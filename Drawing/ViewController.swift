@@ -14,7 +14,7 @@ import GLKit
 
 class ViewController: UIViewController, ARSCNViewDelegate {
     
-    // MARK: Class Properties
+    // MARK: - Class Properties
     var rootNode: SCNNode?
     var sessTool: Tool?
     var userIsDrawing = false
@@ -28,7 +28,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         return upVec
     }
     
-    // MARK: Setup and Configuration
+    // MARK: - Setup and Configuration
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -67,7 +67,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         }
     }
     
-    // MARK: Outlets
+    // MARK: - Outlets
     
     @IBOutlet weak var sceneView: ARSCNView! {
         didSet {
@@ -98,8 +98,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             }
     }
     
-    
-    // MARK: Gesture Handlers
+    // MARK: - Gesture Handlers
     
     @objc func reactToLongPress(byReactingTo holdRecognizer: UILongPressGestureRecognizer) {
         // Check tool type and react accordingly here
@@ -148,29 +147,10 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     }
     
     @objc func reactToPinch(byReactingTo pinchRecognizer: UIPinchGestureRecognizer) {
-        // Check tool type and react accordingly here
-        switch (sessTool?.currentMode)! {
-        case .Pen:
-            switch pinchRecognizer.state {
-            case .began, .changed:
-                sessTool?.size *= pinchRecognizer.scale
-                pinchRecognizer.scale = 1
-            default: break
-            }
-        case .Manipulator:
-            switch pinchRecognizer.state {
-            case .began, .changed:
-                for parentNode in sessTool!.selection {
-                    parentNode.scale.scaleBy(Float(pinchRecognizer.scale))
-                    pinchRecognizer.scale = 1
-                }
-            default: break
-            }
-        }
+        sessTool!.pinch(pinchRecognizer)
     }
-
     
-    // MARK: Public Class Methods
+    // MARK: - Public Class Methods
     
     func updateTool() {
         positionNode((sessTool?.toolNode!)!, atDist: (sessTool?.distanceFromCamera)!)
@@ -226,6 +206,10 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     func updateMove() {
         if userIsMovingStructure {
             if selectionHolderNode == nil {
+                if sessTool!.selection.isEmpty {
+                    return
+                }
+                
                 selectionHolderNode = SCNNode(geometry: SCNSphere(radius: 0.03))
                 selectionHolderNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
                 rootNode?.addChildNode(selectionHolderNode!)
@@ -270,7 +254,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         }
     }
     
-    // MARK: Private Class Methods
+    // MARK: - Private Class Methods
     
     private func calculateGlobalCentroid(_ nodeList: [SCNNode]) -> SCNVector3 {
         var averagePos = SCNVector3()
@@ -283,12 +267,11 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         return averagePos
     }
     
-    // MARK: Delegate Methods
+    // MARK: - Delegate Methods
     
     func renderer(_ renderer: SCNSceneRenderer, willRenderScene scene: SCNScene, atTime time: TimeInterval) {
         updateDraw()
         updateMove()
         updateTool()
-        
     }
 }

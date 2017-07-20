@@ -12,7 +12,7 @@ import SceneKit
 
 class Tool {
     
-    // MARK: Class Properties
+    // MARK: - Class Properties
     var size: CGFloat {
         willSet(newSize) {
             self.toolNode?.geometry = SCNSphere(radius: newSize)
@@ -24,7 +24,7 @@ class Tool {
     var toolNode: SCNNode?
     var selection: Set<SCNNode>
     
-    // MARK: Initializers
+    // MARK: - Initializers
     init() {
         size = CGFloat(0.02)
         distanceFromCamera = 1.0
@@ -50,7 +50,7 @@ class Tool {
          */
     }
     
-    // MARK: Public Class Methods
+    // MARK: - Public Class Methods
     
     func updateSelection(withSelectedNode parentNode: SCNNode) {
         if selection.contains(parentNode) {
@@ -89,7 +89,28 @@ class Tool {
         }
     }
     
+    func pinch(_ recognizer: UIPinchGestureRecognizer) {
+        switch currentMode {
+        case .Pen:
+            switch recognizer.state {
+            case .began, .changed:
+                size *= recognizer.scale
+                recognizer.scale = 1
+            default: break
+            }
+        case .Manipulator:
+            switch recognizer.state {
+            case .began, .changed:
+                for parentNode in selection {
+                    parentNode.scale.scaleBy(Float(recognizer.scale))
+                    recognizer.scale = 1
+                }
+            default: break
+            }
+        }
+    }
     
-    // MARK: Private Class Methods
+    
+    // MARK: - Private Class Methods
     
 }
