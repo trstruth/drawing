@@ -137,6 +137,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 }
             }
         case .Pen:
+            let newNode = SCNNode(geometry: SCNCylinder.init(radius: 0.02, height: 0.5))
+            positionNode(newNode, atDist: (sessTool?.distanceFromCamera)!)
+            rootNode!.addChildNode(newNode)
             break
         }
         
@@ -163,6 +166,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             node.position = node.position + pointerVector
     }
     
+    var lastPoint: SCNNode?
     func updateDraw(){
         if userIsDrawing {
             if bufferNode == nil {
@@ -171,12 +175,26 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 rootNode?.addChildNode(bufferNode!)
                 newPointBuffer = []
             } else {
+                
                 // user is currently drawing a line segment, place spheres at pointer position
+                // let newNode = SCNNode()
                 let newNode = (SCNNode(geometry: SCNSphere(radius: (sessTool?.size)!)))
                 // newNode.convertTransform(newNode.transform, from: rootNode!)
                 positionNode(newNode, atDist: sessTool!.distanceFromCamera)
                 newPointBuffer!.append(newNode)
                 rootNode!.addChildNode(newNode)
+                
+                if lastPoint == nil {
+                    lastPoint = newNode
+                } else {
+                    let cylinderNode = cylinderFrom(vector: lastPoint!.position, toVector: newNode.position)
+                    cylinderNode.position = calculateGlobalAverage([lastPoint!, newNode])
+                    cylinderNode.look(at: newNode.position, up: rootNode!.worldUp, localFront: rootNode!.worldUp)
+                    rootNode?.addChildNode(cylinderNode)
+                    newPointBuffer!.append(cylinderNode)
+                    
+                    lastPoint = newNode
+                }
             }
         } else {
             if bufferNode != nil {
@@ -200,6 +218,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                         newNodeCopy.setWorldTransform(origTrans)
                     }
                     self.bufferNode = nil
+                    self.lastPoint = nil
                 }
             }
         }
@@ -303,7 +322,18 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         updateDraw()
         updateMove()
         updateTool()
+        glLineWidth(20)
     }
     
-    
+    func cylinderFrom(vector vector1: SCNVector3, toVector vector2: SCNVector3) -> SCNNode {
+        
+        // let lookAtMat = GLKMatrix4MakeLookAt(vector1.x, vector1.y, vector1.z, vector2.x, vector2.y, vector2.z, worldUp.x, worldUp.y, worldUp.z)
+        
+        let distBetweenVecs = SCNVector3.SCNVector3Distance(vectorStart: vector1, vectorEnd: vector2)
+        
+        let retNode = SCNNode()
+        retNode.geometry = SCNCylinder(radius: sessTool!.size, height: CGFloat(distBetweenVecs))
+        // retNode.setWorldTransform(SCNMatrix4FromGLKMatrix4(lookAtMat))
+        return retNode
+    }
 }
