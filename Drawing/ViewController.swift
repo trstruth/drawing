@@ -166,26 +166,28 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     func updateDraw(){
         if userIsDrawing {
             if bufferNode == nil {
+                // user has started to draw a new line segment
                 bufferNode = SCNNode()
                 rootNode?.addChildNode(bufferNode!)
                 newPointBuffer = []
             } else {
-                
+                // user is currently drawing a line segment, place spheres at pointer position
                 let newNode = (SCNNode(geometry: SCNSphere(radius: (sessTool?.size)!)))
-                newNode.convertTransform(newNode.transform, from: rootNode!)
+                // newNode.convertTransform(newNode.transform, from: rootNode!)
                 positionNode(newNode, atDist: sessTool!.distanceFromCamera)
                 newPointBuffer!.append(newNode)
                 rootNode!.addChildNode(newNode)
             }
         } else {
             if bufferNode != nil {
+                // user has finished drawing a new line
                 let newParent = SCNNode()
                 rootNode!.addChildNode(newParent)
                 let bestCentroid = calculateGlobalCentroid(newPointBuffer!)
                 newParent.position = bestCentroid
                 newParent.rotation = (sessTool!.toolNode?.rotation)!
-                newParent.geometry = SCNSphere(radius: 0.03)
-                newParent.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
+                // newParent.geometry = SCNSphere(radius: 0.03)
+                // newParent.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
                 
                 rootNode!.addChildNode(newParent)
                 DispatchQueue.main.async {
@@ -210,8 +212,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                     return
                 }
                 
-                selectionHolderNode = SCNNode(geometry: SCNSphere(radius: 0.03))
-                selectionHolderNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
+                selectionHolderNode = SCNNode()
+                // selectionHolderNode.geometry = SCNSphere(radius: 0.03)
+                // selectionHolderNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
                 rootNode?.addChildNode(selectionHolderNode!)
                 
                 let selectionCentroid = calculateGlobalCentroid(Array(sessTool!.selection))
@@ -256,15 +259,42 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     // MARK: - Private Class Methods
     
-    private func calculateGlobalCentroid(_ nodeList: [SCNNode]) -> SCNVector3 {
+    private func calculateGlobalAverage(_ nodeList: [SCNNode]) -> SCNVector3 {
+        // returns the average position of all nodes in nodeList
         var averagePos = SCNVector3()
         for aNode in nodeList {
-            let globalTransMat = aNode.worldTransform
-            let translVec = SCNVector3.init(globalTransMat.m41, globalTransMat.m42, globalTransMat.m43)
+            // let globalTransMat = aNode.worldTransform
+            // let translVec = SCNVector3.init(globalTransMat.m41, globalTransMat.m42, globalTransMat.m43)
+            let translVec = aNode.position
             averagePos = averagePos + translVec
         }
         averagePos.scaleBy(1.0/Float(nodeList.count))
         return averagePos
+    }
+    
+    private func calculateGlobalCentroid(_ nodeList: [SCNNode]) -> SCNVector3 {
+        // returns the position where each component is the midpoint of the extreme points in the respective axis
+        var xExtrema: (xMin: Float, xMax: Float) = (Float.greatestFiniteMagnitude, -Float.greatestFiniteMagnitude)
+        var yExtrema: (yMin: Float, yMax: Float) = (Float.greatestFiniteMagnitude, -Float.greatestFiniteMagnitude)
+        var zExtrema: (zMin: Float, zMax: Float) = (Float.greatestFiniteMagnitude, -Float.greatestFiniteMagnitude)
+        
+        for aNode in nodeList {
+            let pos = aNode.position
+            xExtrema.xMin = min(xExtrema.xMin, pos.x)
+            xExtrema.xMax = max(xExtrema.xMax, pos.x)
+            
+            yExtrema.yMin = min(yExtrema.yMin, pos.y)
+            yExtrema.yMax = max(yExtrema.yMax, pos.y)
+            
+            zExtrema.zMin = min(zExtrema.zMin, pos.z)
+            zExtrema.zMax = max(zExtrema.zMax, pos.z)
+        }
+        
+        let xMid = (xExtrema.xMin + xExtrema.xMax) / 2.0
+        let yMid = (yExtrema.yMin + yExtrema.yMax) / 2.0
+        let zMid = (zExtrema.zMin + zExtrema.zMax) / 2.0
+        
+        return SCNVector3.init(xMid, yMid, zMid)
     }
     
     // MARK: - Delegate Methods
@@ -274,4 +304,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         updateMove()
         updateTool()
     }
+    
+    
 }
