@@ -27,6 +27,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         let upVec = SCNVector4.init(wUp.x, wUp.y, wUp.z, 1.0)
         return upVec
     }
+    let pencilIcon = UIImage.init(named: "pencil_icon")
+    let openHandIcon = UIImage.init(named: "open_hand_icon")
+    let closedHandIcon = UIImage.init(named: "closed_hand_icon")
     
     // MARK: - Setup and Configuration
     override func viewDidLoad() {
@@ -53,6 +56,11 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.contentScaleFactor = 1.3
         rootNode = sceneView.scene.rootNode
         
+        DispatchQueue.main.async {
+            self.IconImage.image = self.pencilIcon
+        }
+        
+        
         sceneView.session.run(configuration)
     }
     
@@ -60,8 +68,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sessTool = Tool()
         sessTool!.rootNode = self.rootNode!
         if sessTool!.toolNode == nil {
-            sessTool!.toolNode = SCNNode(geometry: SCNSphere(radius: (sessTool?.size)!))
-            sessTool!.toolNode?.geometry?.firstMaterial?.diffuse.contents = UIColor.white
+            sessTool!.toolNode = SCNNode()
+            // sessTool!.toolNode = SCNNode(geometry: SCNSphere(radius: (sessTool?.size)!))
+            // sessTool!.toolNode?.geometry?.firstMaterial?.diffuse.contents = UIColor.white
             sessTool!.toolNode?.rotation = worldUp
             rootNode!.addChildNode(sessTool!.toolNode!)
         }
@@ -98,6 +107,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             }
     }
     
+    @IBOutlet weak var IconImage: UIImageView!
+    
     // MARK: - Gesture Handlers
     
     @objc func reactToLongPress(byReactingTo holdRecognizer: UILongPressGestureRecognizer) {
@@ -130,11 +141,17 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             if resultPoints.count > 0 {
                 let resultNode = resultPoints[0].node
                 if resultNode.isEqual(sessTool!.toolNode) {
-                    break
+                    return
                 }
+                
                 if let parentNode = resultNode.parent {
-                    sessTool!.updateSelection(withSelectedNode: parentNode)
+                    if parentNode.isEqual(rootNode!) {
+                        sessTool!.updateSelection(withSelectedNode: resultNode)
+                    } else {
+                        sessTool!.updateSelection(withSelectedNode: parentNode)
+                    }
                 }
+                
             }
         case .Pen:
             let newNode = SCNNode(geometry: SCNCylinder.init(radius: 0.02, height: 0.5))
@@ -147,6 +164,16 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     @objc func reactToSwipe(byReactingTo swipeRecognizer: UISwipeGestureRecognizer) {
         sessTool!.swipe(swipeRecognizer)
+        switch sessTool!.currentMode {
+        case .Manipulator:
+            DispatchQueue.main.async {
+                self.IconImage.image = self.openHandIcon
+            }
+        case .Pen:
+            DispatchQueue.main.async {
+                self.IconImage.image = self.pencilIcon
+            }
+        }
     }
     
     @objc func reactToPinch(byReactingTo pinchRecognizer: UIPinchGestureRecognizer) {
@@ -177,10 +204,9 @@ class ViewController: UIViewController, ARSCNViewDelegate {
             } else {
                 
                 // user is currently drawing a line segment, place spheres at pointer position
-                // let newNode = SCNNode()
                 let newNode = (SCNNode(geometry: SCNSphere(radius: (sessTool?.size)!)))
-                // newNode.convertTransform(newNode.transform, from: rootNode!)
                 positionNode(newNode, atDist: sessTool!.distanceFromCamera)
+
                 newPointBuffer!.append(newNode)
                 rootNode!.addChildNode(newNode)
                 
@@ -190,7 +216,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                     let cylinderNode = cylinderFrom(vector: lastPoint!.position, toVector: newNode.position)
                     cylinderNode.position = calculateGlobalAverage([lastPoint!, newNode])
                     cylinderNode.look(at: newNode.position, up: rootNode!.worldUp, localFront: rootNode!.worldUp)
-                    rootNode?.addChildNode(cylinderNode)
+                    // cylinderNode.filters = [ gaussianBlurFilter! ]
+                    rootNode!.addChildNode(cylinderNode)
                     newPointBuffer!.append(cylinderNode)
                     
                     lastPoint = newNode
@@ -203,19 +230,16 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 rootNode!.addChildNode(newParent)
                 let bestCentroid = calculateGlobalCentroid(newPointBuffer!)
                 newParent.position = bestCentroid
-                newParent.rotation = (sessTool!.toolNode?.rotation)!
-                // newParent.geometry = SCNSphere(radius: 0.03)
-                // newParent.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
                 
                 rootNode!.addChildNode(newParent)
+                
                 DispatchQueue.main.async {
                     while self.newPointBuffer!.count > 0 {
                         let newNode = self.newPointBuffer!.removeFirst()
-                        let newNodeCopy = newNode.clone()
                         let origTrans = newNode.worldTransform
-                        newParent.addChildNode(newNodeCopy)
                         newNode.removeFromParentNode()
-                        newNodeCopy.setWorldTransform(origTrans)
+                        newParent.addChildNode(newNode)
+                        newNode.setWorldTransform(origTrans)
                     }
                     self.bufferNode = nil
                     self.lastPoint = nil
@@ -227,13 +251,16 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     func updateMove() {
         if userIsMovingStructure {
             if selectionHolderNode == nil {
+                // user has started to move a selection
                 if sessTool!.selection.isEmpty {
                     return
                 }
                 
+                DispatchQueue.main.async {
+                    self.IconImage.image = self.closedHandIcon
+                }
+                
                 selectionHolderNode = SCNNode()
-                // selectionHolderNode.geometry = SCNSphere(radius: 0.03)
-                // selectionHolderNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
                 rootNode?.addChildNode(selectionHolderNode!)
                 
                 let selectionCentroid = calculateGlobalCentroid(Array(sessTool!.selection))
@@ -250,14 +277,15 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                         }
                         parentNode.removeFromParentNode()
                         self.sessTool!.updateSelection(withSelectedNode: parentNode)
-                        self.sessTool!.updateSelection(withSelectedNode: self.selectionHolderNode!)
                     }
+                    self.sessTool!.updateSelection(withSelectedNode: self.selectionHolderNode!)
                 }
             } else {
                 selectionHolderNode!.transform = (sessTool!.toolNode?.transform)!
             }
         } else {
             if selectionHolderNode != nil {
+                // user has finished moving a selection
                 DispatchQueue.main.async {
                     let newNode = SCNNode()
                     newNode.transform = self.selectionHolderNode!.transform
@@ -270,6 +298,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
 
                     self.selectionHolderNode!.removeFromParentNode()
                     self.selectionHolderNode = nil
+                    self.IconImage.image = self.openHandIcon
                 }
             }
             
@@ -282,8 +311,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         // returns the average position of all nodes in nodeList
         var averagePos = SCNVector3()
         for aNode in nodeList {
-            // let globalTransMat = aNode.worldTransform
-            // let translVec = SCNVector3.init(globalTransMat.m41, globalTransMat.m42, globalTransMat.m43)
             let translVec = aNode.position
             averagePos = averagePos + translVec
         }
@@ -316,6 +343,16 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         return SCNVector3.init(xMid, yMid, zMid)
     }
     
+    private func cylinderFrom(vector vector1: SCNVector3, toVector vector2: SCNVector3) -> SCNNode {
+        
+        let distBetweenVecs = SCNVector3.SCNVector3Distance(vectorStart: vector1, vectorEnd: vector2)
+        
+        let retNode = SCNNode()
+        retNode.geometry = SCNCylinder(radius: sessTool!.size, height: CGFloat(distBetweenVecs))
+        
+        return retNode
+    }
+    
     // MARK: - Delegate Methods
     
     func renderer(_ renderer: SCNSceneRenderer, willRenderScene scene: SCNScene, atTime time: TimeInterval) {
@@ -323,17 +360,5 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         updateMove()
         updateTool()
         glLineWidth(20)
-    }
-    
-    func cylinderFrom(vector vector1: SCNVector3, toVector vector2: SCNVector3) -> SCNNode {
-        
-        // let lookAtMat = GLKMatrix4MakeLookAt(vector1.x, vector1.y, vector1.z, vector2.x, vector2.y, vector2.z, worldUp.x, worldUp.y, worldUp.z)
-        
-        let distBetweenVecs = SCNVector3.SCNVector3Distance(vectorStart: vector1, vectorEnd: vector2)
-        
-        let retNode = SCNNode()
-        retNode.geometry = SCNCylinder(radius: sessTool!.size, height: CGFloat(distBetweenVecs))
-        // retNode.setWorldTransform(SCNMatrix4FromGLKMatrix4(lookAtMat))
-        return retNode
     }
 }

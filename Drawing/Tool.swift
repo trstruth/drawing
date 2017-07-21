@@ -68,12 +68,14 @@ class Tool {
     
     func changeMode(_ newMode: toolMode) {
         self.currentMode = newMode
+        /*
         switch newMode {
         case .Pen:
             toolNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.white
         case .Manipulator:
             toolNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.gray
         }
+         */
     }
     
     func swipe(_ recognizer: UISwipeGestureRecognizer) {
