@@ -52,6 +52,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         sceneView.antialiasingMode = .multisampling4X
         sceneView.automaticallyUpdatesLighting = true
+        sceneView.autoenablesDefaultLighting = true
         sceneView.preferredFramesPerSecond = 60
         sceneView.contentScaleFactor = 1.3
         rootNode = sceneView.scene.rootNode
@@ -216,10 +217,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                     let cylinderNode = cylinderFrom(vector: lastPoint!.position, toVector: newNode.position)
                     cylinderNode.position = calculateGlobalAverage([lastPoint!, newNode])
                     cylinderNode.look(at: newNode.position, up: rootNode!.worldUp, localFront: rootNode!.worldUp)
-                    // cylinderNode.filters = [ gaussianBlurFilter! ]
                     rootNode!.addChildNode(cylinderNode)
                     newPointBuffer!.append(cylinderNode)
-                    
                     lastPoint = newNode
                 }
             }
