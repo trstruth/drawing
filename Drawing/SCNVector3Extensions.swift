@@ -16,10 +16,24 @@ extension SCNVector3 {
     }
     
     /**
+     * Increments a SCNVector3 with the value of another.
+     */
+    static func += (left: inout SCNVector3, right: SCNVector3) {
+        left = left + right
+    }
+    
+    /**
      * Subtracts two SCNVector3 vectors and returns the result as a new SCNVector3.
      */
     static func - (left: SCNVector3, right: SCNVector3) -> SCNVector3 {
         return SCNVector3Make(left.x - right.x, left.y - right.y, left.z - right.z)
+    }
+    
+    /**
+     * Decrements a SCNVector3 with the value of another.
+     */
+    static func -= (left: inout SCNVector3, right: SCNVector3) {
+        left = left - right
     }
     
     mutating func scaleBy(_ scalar: Float) {

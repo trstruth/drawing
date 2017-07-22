@@ -13,11 +13,7 @@ import SceneKit
 class Tool {
     
     // MARK: - Class Properties
-    var size: CGFloat {
-        willSet(newSize) {
-            self.toolNode?.geometry = SCNSphere(radius: newSize)
-        }
-    }
+    var size: CGFloat
     var distanceFromCamera: Float
     var currentMode: toolMode
     var rootNode: SCNNode?
@@ -30,6 +26,8 @@ class Tool {
         distanceFromCamera = 1.0
         currentMode = toolMode.Pen
         selection = []
+        // toolNode = SCNNode()
+        toolNode = loadNodeFromFile(filename: "pen.dae", directory: "./")//, directory: "art.scnassets")
     }
     
     enum toolMode {
@@ -61,7 +59,7 @@ class Tool {
         } else {
             selection.insert(parentNode)
             for childNode in parentNode.childNodes {
-                childNode.geometry?.firstMaterial?.diffuse.contents = UIColor.yellow
+                childNode.geometry?.firstMaterial?.diffuse.contents = UIColor.darkGray
             }
         }
     }
@@ -114,5 +112,18 @@ class Tool {
     
     
     // MARK: - Private Class Methods
+    
+    func loadNodeFromFile(filename: String, directory: String) -> SCNNode {
+        if let scene = SCNScene(named: filename, inDirectory: directory) {
+            let retNode = SCNNode()
+            scene.rootNode.childNodes.forEach({node in
+                retNode.addChildNode(node)
+                })
+            return retNode
+        } else {
+            print("Invalid path supplied")
+            return SCNNode()
+        }
+    }
     
 }

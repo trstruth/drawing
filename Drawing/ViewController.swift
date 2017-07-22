@@ -22,6 +22,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     var bufferNode: SCNNode?
     var selectionHolderNode: SCNNode?
     var newPointBuffer: [SCNNode]?
+    var oldOrientation: SCNQuaternion?
     var worldUp: SCNVector4 {
         let wUp = rootNode!.worldUp
         let upVec = SCNVector4.init(wUp.x, wUp.y, wUp.z, 1.0)
@@ -37,6 +38,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         setupScene()
         setupTool()
+        
+        IconImage.isHidden = true
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -57,24 +60,31 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.contentScaleFactor = 1.3
         rootNode = sceneView.scene.rootNode
         
+
         DispatchQueue.main.async {
             self.IconImage.image = self.pencilIcon
         }
+
         
         
         sceneView.session.run(configuration)
     }
     
     func setupTool() {
+
         sessTool = Tool()
         sessTool!.rootNode = self.rootNode!
-        if sessTool!.toolNode == nil {
-            sessTool!.toolNode = SCNNode()
-            // sessTool!.toolNode = SCNNode(geometry: SCNSphere(radius: (sessTool?.size)!))
-            // sessTool!.toolNode?.geometry?.firstMaterial?.diffuse.contents = UIColor.white
-            sessTool!.toolNode?.rotation = worldUp
-            rootNode!.addChildNode(sessTool!.toolNode!)
-        }
+        sessTool!.toolNode!.scale = SCNVector3Make(0.5, 0.5, 0.5)
+        sessTool!.toolNode!.pivot = SCNMatrix4MakeTranslation(-0.05, 0.0, 0.0)
+        
+        let placeHolderNode = SCNNode()
+        positionNode(placeHolderNode, atDist: sessTool!.distanceFromCamera)
+        
+        sessTool!.toolNode!.position = placeHolderNode.position
+        sessTool!.toolNode!.rotation = placeHolderNode.rotation
+        rootNode!.addChildNode(sessTool!.toolNode!)
+        
+        self.oldOrientation = sessTool!.toolNode!.orientation
     }
     
     // MARK: - Outlets
@@ -109,6 +119,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     }
     
     @IBOutlet weak var IconImage: UIImageView!
+    
     
     // MARK: - Gesture Handlers
     
@@ -155,9 +166,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 
             }
         case .Pen:
-            let newNode = SCNNode(geometry: SCNCylinder.init(radius: 0.02, height: 0.5))
-            positionNode(newNode, atDist: (sessTool?.distanceFromCamera)!)
-            rootNode!.addChildNode(newNode)
             break
         }
         
@@ -171,6 +179,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 self.IconImage.image = self.openHandIcon
             }
         case .Pen:
+
             DispatchQueue.main.async {
                 self.IconImage.image = self.pencilIcon
             }
@@ -184,14 +193,33 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     // MARK: - Public Class Methods
     
     func updateTool() {
-        positionNode((sessTool?.toolNode!)!, atDist: (sessTool?.distanceFromCamera)!)
+        // positionNode((sessTool?.toolNode!)!, atDist: (sessTool?.distanceFromCamera)!)
+        
+        let placeHolderNode = SCNNode()
+        positionNode(placeHolderNode, atDist: sessTool!.distanceFromCamera)
+        
+        sessTool!.toolNode!.position = placeHolderNode.position
+        sessTool!.toolNode!.orientation = getUpdatedOrientation(from: oldOrientation!, to: placeHolderNode.orientation)
+        
+        oldOrientation = sessTool!.toolNode!.orientation
+        
+        
     }
 
+    private func getUpdatedOrientation(from q1: SCNQuaternion, to q2: SCNQuaternion) -> SCNQuaternion {
+        let gq1 = GLKQuaternion.init(q: (q1.x, q1.y, q1.z, q1.w))
+        let gq2 = GLKQuaternion.init(q: (q2.x, q2.y, q2.z, q2.w))
+        
+        let slerpedQuat = GLKQuaternionSlerp(gq1, gq2, 0.1)
+        
+        return SCNQuaternion.init(slerpedQuat.x, slerpedQuat.y, slerpedQuat.z, slerpedQuat.w)
+    }
+    
     private func positionNode(_ node: SCNNode, atDist dist: Float) {
-            node.transform = (sceneView.pointOfView?.transform)!
-            var pointerVector = SCNVector3(-1 * node.transform.m31, -1 * node.transform.m32, -1 * node.transform.m33)
-            pointerVector.scaleBy(dist)
-            node.position = node.position + pointerVector
+        node.transform = (sceneView.pointOfView?.transform)!
+        var pointerVector = SCNVector3(-1 * node.transform.m31, -1 * node.transform.m32, -1 * node.transform.m33)
+        pointerVector.scaleBy(dist)
+        node.position += pointerVector
     }
     
     var lastPoint: SCNNode?
@@ -263,8 +291,10 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 rootNode?.addChildNode(selectionHolderNode!)
                 
                 let selectionCentroid = calculateGlobalCentroid(Array(sessTool!.selection))
+                selectionHolderNode!.transform = sessTool!.toolNode!.transform
                 selectionHolderNode!.position = selectionCentroid
-                selectionHolderNode!.rotation = (sessTool!.toolNode?.rotation)!
+                selectionHolderNode!.geometry = SCNSphere(radius: 0.05)
+                selectionHolderNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
                 
                 for parentNode in sessTool!.selection {
                     DispatchQueue.main.async {
