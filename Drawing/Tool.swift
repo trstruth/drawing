@@ -17,17 +17,18 @@ class Tool {
     var distanceFromCamera: Float
     var currentMode: toolMode
     var rootNode: SCNNode?
-    var toolNode: SCNNode?
+    var toolNode: SCNNode!
     var selection: Set<SCNNode>
     
     // MARK: - Initializers
     init() {
-        size = CGFloat(0.02)
-        distanceFromCamera = 1.0
+        size = CGFloat(0.01)
+        distanceFromCamera = 0.5
         currentMode = toolMode.Pen
         selection = []
         // toolNode = SCNNode()
         toolNode = loadNodeFromFile(filename: "pen.dae", directory: "./")//, directory: "art.scnassets")
+        
     }
     
     enum toolMode {
@@ -69,7 +70,8 @@ class Tool {
         /*
         switch newMode {
         case .Pen:
-            toolNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.white
+             break
+            
         case .Manipulator:
             toolNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.gray
         }
@@ -114,7 +116,7 @@ class Tool {
     // MARK: - Private Class Methods
     
     func loadNodeFromFile(filename: String, directory: String) -> SCNNode {
-        if let scene = SCNScene(named: filename, inDirectory: directory) {
+        if let scene = SCNScene(named: filename) {
             let retNode = SCNNode()
             scene.rootNode.childNodes.forEach({node in
                 retNode.addChildNode(node)

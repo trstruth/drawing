@@ -16,7 +16,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     // MARK: - Class Properties
     var rootNode: SCNNode?
-    var sessTool: Tool?
+    var sessTool: Tool!
     var userIsDrawing = false
     var userIsMovingStructure = false
     var bufferNode: SCNNode?
@@ -58,6 +58,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.autoenablesDefaultLighting = true
         sceneView.preferredFramesPerSecond = 60
         sceneView.contentScaleFactor = 1.3
+        
         rootNode = sceneView.scene.rootNode
         
 
@@ -73,18 +74,17 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     func setupTool() {
 
         sessTool = Tool()
-        sessTool!.rootNode = self.rootNode!
-        sessTool!.toolNode!.scale = SCNVector3Make(0.5, 0.5, 0.5)
-        sessTool!.toolNode!.pivot = SCNMatrix4MakeTranslation(-0.05, 0.0, 0.0)
+        sessTool.rootNode = self.rootNode!
+        sessTool.toolNode!.scale = SCNVector3Make(0.2, 0.2, 0.2)
         
         let placeHolderNode = SCNNode()
-        positionNode(placeHolderNode, atDist: sessTool!.distanceFromCamera)
+        positionNode(placeHolderNode, atDist: sessTool.distanceFromCamera)
         
-        sessTool!.toolNode!.position = placeHolderNode.position
-        sessTool!.toolNode!.rotation = placeHolderNode.rotation
-        rootNode!.addChildNode(sessTool!.toolNode!)
+        sessTool.toolNode!.position = placeHolderNode.position
+        sessTool.toolNode!.rotation = placeHolderNode.rotation
+        rootNode?.addChildNode(sessTool.toolNode!)
         
-        self.oldOrientation = sessTool!.toolNode!.orientation
+        self.oldOrientation = sessTool.toolNode!.orientation
     }
     
     // MARK: - Outlets
@@ -112,8 +112,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     }
     
     @IBAction func deleteButton(_ sender: UIButton) {
-            for selectedNode in self.sessTool!.selection {
-                sessTool!.updateSelection(withSelectedNode: selectedNode)
+            for selectedNode in self.sessTool.selection {
+                sessTool.updateSelection(withSelectedNode: selectedNode)
                 selectedNode.removeFromParentNode()
             }
     }
@@ -125,7 +125,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     @objc func reactToLongPress(byReactingTo holdRecognizer: UILongPressGestureRecognizer) {
         // Check tool type and react accordingly here
-        switch (sessTool?.currentMode)! {
+        switch sessTool.currentMode {
         case .Pen:
             switch holdRecognizer.state {
             case .began:
@@ -147,20 +147,20 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     }
     
     @objc func reactToTap(byReactingTo singleTapRecognizer: UITapGestureRecognizer) {
-        switch (sessTool?.currentMode)! {
+        switch sessTool.currentMode {
         case .Manipulator:
             let resultPoints = sceneView.hitTest(singleTapRecognizer.location(in: sceneView), options: nil)
             if resultPoints.count > 0 {
                 let resultNode = resultPoints[0].node
-                if resultNode.isEqual(sessTool!.toolNode) {
+                if resultNode.isEqual(sessTool.toolNode) {
                     return
                 }
                 
                 if let parentNode = resultNode.parent {
                     if parentNode.isEqual(rootNode!) {
-                        sessTool!.updateSelection(withSelectedNode: resultNode)
+                        sessTool.updateSelection(withSelectedNode: resultNode)
                     } else {
-                        sessTool!.updateSelection(withSelectedNode: parentNode)
+                        sessTool.updateSelection(withSelectedNode: parentNode)
                     }
                 }
                 
@@ -172,22 +172,26 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     }
     
     @objc func reactToSwipe(byReactingTo swipeRecognizer: UISwipeGestureRecognizer) {
-        sessTool!.swipe(swipeRecognizer)
-        switch sessTool!.currentMode {
+        sessTool.swipe(swipeRecognizer)
+        switch sessTool.currentMode {
         case .Manipulator:
             DispatchQueue.main.async {
+                self.sessTool.toolNode.isHidden = true
+                self.IconImage.isHidden = false
                 self.IconImage.image = self.openHandIcon
             }
         case .Pen:
 
             DispatchQueue.main.async {
-                self.IconImage.image = self.pencilIcon
+                // self.IconImage.image = self.pencilIcon
+                self.IconImage.isHidden = true
+                self.sessTool.toolNode.isHidden = false
             }
         }
     }
     
     @objc func reactToPinch(byReactingTo pinchRecognizer: UIPinchGestureRecognizer) {
-        sessTool!.pinch(pinchRecognizer)
+        sessTool.pinch(pinchRecognizer)
     }
     
     // MARK: - Public Class Methods
@@ -196,12 +200,12 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         // positionNode((sessTool?.toolNode!)!, atDist: (sessTool?.distanceFromCamera)!)
         
         let placeHolderNode = SCNNode()
-        positionNode(placeHolderNode, atDist: sessTool!.distanceFromCamera)
+        positionNode(placeHolderNode, atDist: sessTool.distanceFromCamera)
         
-        sessTool!.toolNode!.position = placeHolderNode.position
-        sessTool!.toolNode!.orientation = getUpdatedOrientation(from: oldOrientation!, to: placeHolderNode.orientation)
+        sessTool.toolNode!.position = placeHolderNode.position
+        sessTool.toolNode!.orientation = getUpdatedOrientation(from: oldOrientation!, to: placeHolderNode.orientation)
         
-        oldOrientation = sessTool!.toolNode!.orientation
+        oldOrientation = sessTool.toolNode!.orientation
         
         
     }
@@ -227,14 +231,15 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         if userIsDrawing {
             if bufferNode == nil {
                 // user has started to draw a new line segment
+                
                 bufferNode = SCNNode()
                 rootNode?.addChildNode(bufferNode!)
                 newPointBuffer = []
             } else {
                 
                 // user is currently drawing a line segment, place spheres at pointer position
-                let newNode = (SCNNode(geometry: SCNSphere(radius: (sessTool?.size)!)))
-                positionNode(newNode, atDist: sessTool!.distanceFromCamera)
+                let newNode = (SCNNode(geometry: SCNSphere(radius: sessTool.size)))
+                positionNode(newNode, atDist: sessTool.distanceFromCamera)
 
                 newPointBuffer!.append(newNode)
                 rootNode!.addChildNode(newNode)
@@ -279,7 +284,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         if userIsMovingStructure {
             if selectionHolderNode == nil {
                 // user has started to move a selection
-                if sessTool!.selection.isEmpty {
+                if sessTool.selection.isEmpty {
                     return
                 }
                 
@@ -290,13 +295,13 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 selectionHolderNode = SCNNode()
                 rootNode?.addChildNode(selectionHolderNode!)
                 
-                let selectionCentroid = calculateGlobalCentroid(Array(sessTool!.selection))
-                selectionHolderNode!.transform = sessTool!.toolNode!.transform
+                let selectionCentroid = calculateGlobalCentroid(Array(sessTool.selection))
+                selectionHolderNode!.transform = sessTool.toolNode!.transform
                 selectionHolderNode!.position = selectionCentroid
                 selectionHolderNode!.geometry = SCNSphere(radius: 0.05)
                 selectionHolderNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
                 
-                for parentNode in sessTool!.selection {
+                for parentNode in sessTool.selection {
                     DispatchQueue.main.async {
                         for childNode in parentNode.childNodes {
                             let origTrans = childNode.worldTransform
@@ -305,25 +310,26 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                             childNode.setWorldTransform(origTrans)
                         }
                         parentNode.removeFromParentNode()
-                        self.sessTool!.updateSelection(withSelectedNode: parentNode)
+                        self.sessTool.updateSelection(withSelectedNode: parentNode)
                     }
-                    self.sessTool!.updateSelection(withSelectedNode: self.selectionHolderNode!)
+                    self.sessTool.updateSelection(withSelectedNode: self.selectionHolderNode!)
                 }
             } else {
-                selectionHolderNode!.transform = (sessTool!.toolNode?.transform)!
+                selectionHolderNode!.transform = (sessTool.toolNode?.transform)!
             }
         } else {
             if selectionHolderNode != nil {
                 // user has finished moving a selection
                 DispatchQueue.main.async {
+                    self.IconImage.image = self.openHandIcon
                     let newNode = SCNNode()
                     newNode.transform = self.selectionHolderNode!.transform
                     for childNode in self.selectionHolderNode!.childNodes {
                         newNode.addChildNode(childNode)
                     }
                     self.rootNode!.replaceChildNode(self.selectionHolderNode!, with: newNode)
-                    self.sessTool!.updateSelection(withSelectedNode: self.selectionHolderNode!)
-                    self.sessTool!.updateSelection(withSelectedNode: newNode)
+                    self.sessTool.updateSelection(withSelectedNode: self.selectionHolderNode!)
+                    self.sessTool.updateSelection(withSelectedNode: newNode)
 
                     self.selectionHolderNode!.removeFromParentNode()
                     self.selectionHolderNode = nil
@@ -377,7 +383,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         let distBetweenVecs = SCNVector3.SCNVector3Distance(vectorStart: vector1, vectorEnd: vector2)
         
         let retNode = SCNNode()
-        retNode.geometry = SCNCylinder(radius: sessTool!.size, height: CGFloat(distBetweenVecs))
+        retNode.geometry = SCNCylinder(radius: sessTool.size, height: CGFloat(distBetweenVecs))
         
         return retNode
     }
