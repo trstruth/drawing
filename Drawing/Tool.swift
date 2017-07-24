@@ -28,7 +28,6 @@ class Tool {
         selection = []
         // toolNode = SCNNode()
         toolNode = loadNodeFromFile(filename: "pen.dae", directory: "./")//, directory: "art.scnassets")
-        
     }
     
     enum toolMode {
@@ -53,7 +52,7 @@ class Tool {
     
     func updateSelection(withSelectedNode parentNode: SCNNode) {
         if selection.contains(parentNode) {
-            selection.remove(parentNode)
+            selection.remove(parentNode) // bad access
             for childNode in parentNode.childNodes {
                 childNode.geometry?.firstMaterial?.diffuse.contents = UIColor.white
             }

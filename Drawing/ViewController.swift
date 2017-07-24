@@ -168,7 +168,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         case .Pen:
             break
         }
-        
     }
     
     @objc func reactToSwipe(byReactingTo swipeRecognizer: UISwipeGestureRecognizer) {
@@ -197,20 +196,19 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     // MARK: - Public Class Methods
     
     func updateTool() {
-        // positionNode((sessTool?.toolNode!)!, atDist: (sessTool?.distanceFromCamera)!)
         
         let placeHolderNode = SCNNode()
         positionNode(placeHolderNode, atDist: sessTool.distanceFromCamera)
         
         sessTool.toolNode!.position = placeHolderNode.position
-        sessTool.toolNode!.orientation = getUpdatedOrientation(from: oldOrientation!, to: placeHolderNode.orientation)
+        sessTool.toolNode!.orientation = getSlerpOrientation(from: oldOrientation!, to: placeHolderNode.orientation)
         
         oldOrientation = sessTool.toolNode!.orientation
         
         
     }
 
-    private func getUpdatedOrientation(from q1: SCNQuaternion, to q2: SCNQuaternion) -> SCNQuaternion {
+    private func getSlerpOrientation(from q1: SCNQuaternion, to q2: SCNQuaternion) -> SCNQuaternion {
         let gq1 = GLKQuaternion.init(q: (q1.x, q1.y, q1.z, q1.w))
         let gq2 = GLKQuaternion.init(q: (q2.x, q2.y, q2.z, q2.w))
         
@@ -284,6 +282,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         if userIsMovingStructure {
             if selectionHolderNode == nil {
                 // user has started to move a selection
+                
                 if sessTool.selection.isEmpty {
                     return
                 }
@@ -291,7 +290,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 DispatchQueue.main.async {
                     self.IconImage.image = self.closedHandIcon
                 }
-                
+
                 selectionHolderNode = SCNNode()
                 rootNode?.addChildNode(selectionHolderNode!)
                 
@@ -301,8 +300,10 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 selectionHolderNode!.geometry = SCNSphere(radius: 0.05)
                 selectionHolderNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
                 
-                for parentNode in sessTool.selection {
-                    DispatchQueue.main.async {
+                
+                DispatchQueue.main.async {
+                    for parentNode in self.sessTool.selection {
+                        
                         for childNode in parentNode.childNodes {
                             let origTrans = childNode.worldTransform
                             childNode.removeFromParentNode()
@@ -310,7 +311,8 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                             childNode.setWorldTransform(origTrans)
                         }
                         parentNode.removeFromParentNode()
-                        self.sessTool.updateSelection(withSelectedNode: parentNode)
+                        self.sessTool.updateSelection(withSelectedNode: parentNode) // bad access
+                        
                     }
                     self.sessTool.updateSelection(withSelectedNode: self.selectionHolderNode!)
                 }
@@ -320,17 +322,16 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         } else {
             if selectionHolderNode != nil {
                 // user has finished moving a selection
+                
                 DispatchQueue.main.async {
                     self.IconImage.image = self.openHandIcon
-                    let newNode = SCNNode()
-                    newNode.transform = self.selectionHolderNode!.transform
-                    for childNode in self.selectionHolderNode!.childNodes {
-                        newNode.addChildNode(childNode)
+                    
+                    if let newNode = self.selectionHolderNode?.clone() {
+                        newNode.geometry = nil
+                        self.rootNode!.replaceChildNode(self.selectionHolderNode!, with: newNode)
+                        self.sessTool.updateSelection(withSelectedNode: self.selectionHolderNode!)
+                        self.sessTool.updateSelection(withSelectedNode: newNode)
                     }
-                    self.rootNode!.replaceChildNode(self.selectionHolderNode!, with: newNode)
-                    self.sessTool.updateSelection(withSelectedNode: self.selectionHolderNode!)
-                    self.sessTool.updateSelection(withSelectedNode: newNode)
-
                     self.selectionHolderNode!.removeFromParentNode()
                     self.selectionHolderNode = nil
                     self.IconImage.image = self.openHandIcon
