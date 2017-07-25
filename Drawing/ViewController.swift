@@ -317,7 +317,11 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                     self.sessTool.updateSelection(withSelectedNode: self.selectionHolderNode!)
                 }
             } else {
-                selectionHolderNode!.transform = (sessTool.toolNode?.transform)!
+                let positionTransformNode = SCNNode()
+                let origScale = selectionHolderNode!.scale
+                positionNode(positionTransformNode, atDist: sessTool.distanceFromCamera)
+                selectionHolderNode!.transform = positionTransformNode.transform
+                selectionHolderNode!.scale = origScale
             }
         } else {
             if selectionHolderNode != nil {

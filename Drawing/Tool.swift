@@ -22,7 +22,7 @@ class Tool {
     
     // MARK: - Initializers
     init() {
-        size = CGFloat(0.01)
+        size = CGFloat(0.007)
         distanceFromCamera = 0.5
         currentMode = toolMode.Pen
         selection = []
