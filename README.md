@@ -1,6 +1,6 @@
 # Drawing
 
-![Alt text](http://imgur.com/a/fmTwj)
+![Alt text](http://imgur.com/AJQR1Vp)
 
 #### Description
 An app for drawing and manipulating structures displayed with augmented reality, made with Apple's new(ish) ARKit framework.
