@@ -66,15 +66,6 @@ class Tool {
     
     func changeMode(_ newMode: toolMode) {
         self.currentMode = newMode
-        /*
-        switch newMode {
-        case .Pen:
-             break
-            
-        case .Manipulator:
-            toolNode!.geometry?.firstMaterial?.diffuse.contents = UIColor.gray
-        }
-         */
     }
     
     func swipe(_ recognizer: UISwipeGestureRecognizer) {
@@ -114,7 +105,7 @@ class Tool {
     
     // MARK: - Private Class Methods
     
-    func loadNodeFromFile(filename: String, directory: String) -> SCNNode {
+    private func loadNodeFromFile(filename: String, directory: String) -> SCNNode {
         if let scene = SCNScene(named: filename) {
             let retNode = SCNNode()
             scene.rootNode.childNodes.forEach({node in

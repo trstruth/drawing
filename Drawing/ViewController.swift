@@ -28,7 +28,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         let upVec = SCNVector4.init(wUp.x, wUp.y, wUp.z, 1.0)
         return upVec
     }
-    let pencilIcon = UIImage.init(named: "pencil_icon")
     let openHandIcon = UIImage.init(named: "open_hand_icon")
     let closedHandIcon = UIImage.init(named: "closed_hand_icon")
     
@@ -60,14 +59,12 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         sceneView.contentScaleFactor = 1.3
         
         rootNode = sceneView.scene.rootNode
-        
 
         DispatchQueue.main.async {
-            self.IconImage.image = self.pencilIcon
+            self.IconImage.image = self.openHandIcon
+            self.IconImage.isHidden = true
         }
 
-        
-        
         sceneView.session.run(configuration)
     }
     
@@ -120,7 +117,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
     
     @IBOutlet weak var IconImage: UIImageView!
     
-    
     // MARK: - Gesture Handlers
     
     @objc func reactToLongPress(byReactingTo holdRecognizer: UILongPressGestureRecognizer) {
@@ -163,7 +159,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                         sessTool.updateSelection(withSelectedNode: parentNode)
                     }
                 }
-                
             }
         case .Pen:
             break
@@ -180,7 +175,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
                 self.IconImage.image = self.openHandIcon
             }
         case .Pen:
-
             DispatchQueue.main.async {
                 // self.IconImage.image = self.pencilIcon
                 self.IconImage.isHidden = true
@@ -199,21 +193,16 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         
         let placeHolderNode = SCNNode()
         positionNode(placeHolderNode, atDist: sessTool.distanceFromCamera)
-        
         sessTool.toolNode!.position = placeHolderNode.position
         sessTool.toolNode!.orientation = getSlerpOrientation(from: oldOrientation!, to: placeHolderNode.orientation)
         
         oldOrientation = sessTool.toolNode!.orientation
-        
-        
     }
 
     private func getSlerpOrientation(from q1: SCNQuaternion, to q2: SCNQuaternion) -> SCNQuaternion {
         let gq1 = GLKQuaternion.init(q: (q1.x, q1.y, q1.z, q1.w))
         let gq2 = GLKQuaternion.init(q: (q2.x, q2.y, q2.z, q2.w))
-        
         let slerpedQuat = GLKQuaternionSlerp(gq1, gq2, 0.1)
-        
         return SCNQuaternion.init(slerpedQuat.x, slerpedQuat.y, slerpedQuat.z, slerpedQuat.w)
     }
     
@@ -229,12 +218,10 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         if userIsDrawing {
             if bufferNode == nil {
                 // user has started to draw a new line segment
-                
                 bufferNode = SCNNode()
                 rootNode?.addChildNode(bufferNode!)
                 newPointBuffer = []
             } else {
-                
                 // user is currently drawing a line segment, place spheres at pointer position
                 let newNode = (SCNNode(geometry: SCNSphere(radius: sessTool.size)))
                 positionNode(newNode, atDist: sessTool.distanceFromCamera)
@@ -282,7 +269,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         if userIsMovingStructure {
             if selectionHolderNode == nil {
                 // user has started to move a selection
-                
                 if sessTool.selection.isEmpty {
                     return
                 }
@@ -326,7 +312,6 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         } else {
             if selectionHolderNode != nil {
                 // user has finished moving a selection
-                
                 DispatchQueue.main.async {
                     self.IconImage.image = self.openHandIcon
                     
@@ -399,6 +384,5 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         updateDraw()
         updateMove()
         updateTool()
-        glLineWidth(20)
     }
 }
