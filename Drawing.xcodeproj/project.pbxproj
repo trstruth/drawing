@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		6A00A1601F1D561000DAF154 /* Tool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A00A15F1F1D561000DAF154 /* Tool.swift */; };
-		6A5D6A221F231E4700E3687E /* art.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 6A5D6A211F231E4700E3687E /* art.scnassets */; };
 		6A60F7B51F180C72007231A9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A60F7B41F180C72007231A9 /* AppDelegate.swift */; };
 		6A60F7B71F180C72007231A9 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A60F7B61F180C72007231A9 /* ViewController.swift */; };
 		6A60F7BA1F180C72007231A9 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 6A60F7B81F180C72007231A9 /* Main.storyboard */; };
@@ -20,7 +19,6 @@
 
 /* Begin PBXFileReference section */
 		6A00A15F1F1D561000DAF154 /* Tool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tool.swift; sourceTree = "<group>"; };
-		6A5D6A211F231E4700E3687E /* art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; name = art.scnassets; path = ../../../../Desktop/art.scnassets; sourceTree = "<group>"; };
 		6A60F7B11F180C72007231A9 /* Drawing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Drawing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A60F7B41F180C72007231A9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		6A60F7B61F180C72007231A9 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -62,7 +60,6 @@
 		6A60F7B31F180C72007231A9 /* Drawing */ = {
 			isa = PBXGroup;
 			children = (
-				6A5D6A211F231E4700E3687E /* art.scnassets */,
 				6A60F7B41F180C72007231A9 /* AppDelegate.swift */,
 				6A60F7B61F180C72007231A9 /* ViewController.swift */,
 				6A00A15F1F1D561000DAF154 /* Tool.swift */,
@@ -135,7 +132,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				6A60F7BF1F180C72007231A9 /* LaunchScreen.storyboard in Resources */,
-				6A5D6A221F231E4700E3687E /* art.scnassets in Resources */,
 				6AE8286C1F240E420003DCB5 /* pen.dae in Resources */,
 				6A60F7BC1F180C72007231A9 /* Assets.xcassets in Resources */,
 				6A60F7BA1F180C72007231A9 /* Main.storyboard in Resources */,
