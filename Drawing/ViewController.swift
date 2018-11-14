@@ -46,7 +46,7 @@ class ViewController: UIViewController, ARSCNViewDelegate {
         UIApplication.shared.isIdleTimerDisabled = true
     }
     
-    var configuration = ARWorldTrackingSessionConfiguration()
+    var configuration = ARWorldTrackingConfiguration()
     func setupScene() {
         // Configure and setup the scene view
         configuration.planeDetection = .horizontal
